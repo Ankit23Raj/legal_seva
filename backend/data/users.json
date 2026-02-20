@@ -1,0 +1,53 @@
+[
+  {
+    "name": "Test User",
+    "email": "test@test.com",
+    "password": "$2a$10$Kx9....."
+  },
+  {
+    "name": "CLI Test",
+    "email": "cli@test.com",
+    "password": "$2b$10$LN8GYlcYajJomx0M9ql.iu0J/dBe/1d.61RpiKJrvrLKrUnMGdev6"
+  },
+  {
+    "name": "Sonal",
+    "email": "sonalsheoran58@gmail.com",
+    "password": "$2b$10$uUF39ZXDNvcde6J6a15tHeMPF3XWkcPCE7GVJDkRBsRpPiSZwE2la"
+  },
+  {
+    "name": "Test User",
+    "email": "testuser@example.com",
+    "password": "$2b$10$sPEdhDC0sy6h./i5f.9piOLmF2a/fgGvru/atkIaMCcASalqPPlJW",
+    "role": "student"
+  },
+  {
+    "name": "Ankit Raj",
+    "email": "annkitraj1876@gmail.com",
+    "password": "$2b$10$gI9VzsGfM23w8eW985DnJe2osEglcCsnUg2MFnXtVPBRA4bNBwk0O",
+    "role": "student"
+  },
+  {
+    "name": "Ankit Raj",
+    "email": "ankitraj1876@gmail.com",
+    "password": "$2b$10$uf6vc5qAxbnq1en1i6WAquv93aJMnmNa0097clowai5m9UX1hWDAq",
+    "role": "local"
+  },
+  {
+    "name": "Ankit Raj",
+    "email": "ankitraj162310@gmail.com",
+    "password": "$2b$10$n8q09SglwBTrTn7w2rxZfONosMdJgXUvM1ZUc.KPgyT26hhb5d.eK",
+    "role": "local"
+  },
+  {
+    "name": "Test2",
+    "email": "test2@example.com",
+    "password": "$2b$10$xPux0mKH2QSD3MubYBftKOhavAVwPuY4aA5KEbt5WZPVR7CQ5sAY2",
+    "role": "local"
+  },
+  {
+    "name": "Ankit Raj",
+    "email": "24BCS11309@cuchd.in",
+    "password": "$2b$10$yuAViPmrr6MqMvwkvLdhf.XUF2mMbiAxns7/VDdVhYSXXtN13aDny",
+    "role": "local"
+  }
+]
