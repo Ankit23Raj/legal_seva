@@ -12,6 +12,10 @@ const messageSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    receiver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
     senderEmail: {
       type: String,
       required: true,
@@ -19,6 +23,12 @@ const messageSchema = new mongoose.Schema(
     senderName: {
       type: String,
       required: true,
+    },
+    receiverEmail: {
+      type: String,
+    },
+    receiverName: {
+      type: String,
     },
     message: {
       type: String,
@@ -43,14 +53,14 @@ const messageSchema = new mongoose.Schema(
 // Indexes for faster queries
 messageSchema.index({ issue: 1, createdAt: -1 });
 messageSchema.index({ sender: 1 });
+messageSchema.index({ receiver: 1 });
 messageSchema.index({ isRead: 1 });
 
 // Update readAt when isRead is set to true
-messageSchema.pre('save', function (next) {
+messageSchema.pre('save', async function () {
   if (this.isModified('isRead') && this.isRead && !this.readAt) {
     this.readAt = new Date();
   }
-  next();
 });
 
 const Message = mongoose.model('Message', messageSchema);

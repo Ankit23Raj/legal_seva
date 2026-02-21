@@ -1,6 +1,9 @@
 import Message from '../models/Message.js';
 import Issue from '../models/Issue.js';
+import User from '../models/User.js';
 import { AppError } from '../middlewares/errorHandler.js';
+
+const isClientRole = (role) => role === 'client' || role === 'local';
 
 class MessageService {
   // Create new message
@@ -18,23 +21,72 @@ class MessageService {
       throw new AppError('Issue not found', 404);
     }
 
-    // Check if user has access to this issue
-    if (
-      user.role === 'local' &&
-      issue.client.toString() !== user.id
-    ) {
-      throw new AppError('You do not have permission to message on this issue', 403);
+    // Determine receiver and ensure the correct parties are chatting
+    let receiverId;
+    let receiverEmail;
+    let receiverName;
+
+    const senderId = String(user.id);
+    const issueClientId = issue.client ? String(issue.client?._id || issue.client) : '';
+    const issueAssignedId = issue.assignedTo ? String(issue.assignedTo?._id || issue.assignedTo) : '';
+
+    if (user.role === 'student') {
+      // If another student is already assigned, prevent hijacking the chat
+      if (issue.assignedTo && String(issue.assignedTo) !== senderId) {
+        throw new AppError('This issue is already assigned to another student', 403);
+      }
+
+      // Auto-assign issue to this student on first reply
+      if (!issue.assignedTo) {
+        issue.assignedTo = user.id;
+        issue.status = 'in-progress';
+        await issue.save();
+      }
+
+      receiverId = issue.client?._id || issue.client;
+      receiverEmail = issue.clientEmail;
+      receiverName = issue.clientName;
+    } else if (isClientRole(user.role)) {
+      // Client can only chat on their own issue
+      if (issueClientId !== senderId) {
+        throw new AppError('You do not have permission to message on this issue', 403);
+      }
+
+      if (!issue.assignedTo) {
+        throw new AppError('No student has been assigned to this issue yet', 400);
+      }
+
+      receiverId = issue.assignedTo?._id || issue.assignedTo;
+      const receiverUser = await User.findById(receiverId).select('email name');
+      receiverEmail = receiverUser?.email;
+      receiverName = receiverUser?.name;
+    } else {
+      throw new AppError('You do not have permission to send messages', 403);
+    }
+
+    if (!receiverId) {
+      throw new AppError('Unable to determine message recipient', 500);
+    }
+
+    if (String(receiverId) === senderId) {
+      throw new AppError('Cannot send a message to yourself', 400);
     }
 
     const newMessage = await Message.create({
       issue: issueId,
       sender: user.id,
+      receiver: receiverId,
       senderEmail: user.email,
       senderName: user.name,
+      receiverEmail,
+      receiverName,
       message,
     });
 
-    return await newMessage.populate('sender', 'name email role');
+    return await newMessage.populate([
+      { path: 'sender', select: 'name email role' },
+      { path: 'receiver', select: 'name email role' },
+    ]);
   }
 
   // Get conversations (issues the user is involved in) with last message metadata
@@ -61,12 +113,14 @@ class MessageService {
         const clientUser = issue.client && typeof issue.client === 'object' ? issue.client : null;
         const assignedUser = issue.assignedTo && typeof issue.assignedTo === 'object' ? issue.assignedTo : null;
 
-        const isClient = issue.client?.toString?.() === user.id;
+        const clientId = String(issue.client?._id || issue.client);
+        const assignedId = issue.assignedTo ? String(issue.assignedTo?._id || issue.assignedTo) : '';
+        const isClient = clientId === user.id;
         const other = isClient ? assignedUser : clientUser;
 
         return {
           id: issue._id,
-          participants: [issue.client?.toString?.() || String(issue.client), issue.assignedTo?.toString?.() || (issue.assignedTo ? String(issue.assignedTo) : '')].filter(Boolean),
+          participants: [clientId, assignedId].filter(Boolean),
           lastMessage: lastMessage?.message || '',
           lastMessageTime: (lastMessage?.createdAt || issue.updatedAt || issue.createdAt).toISOString(),
           unread: Boolean(hasUnread),
@@ -93,12 +147,20 @@ class MessageService {
       throw new AppError('Issue not found', 404);
     }
 
-    if (user.role === 'local' && issue.client.toString() !== user.id) {
+    if (isClientRole(user.role) && issue.client.toString() !== user.id) {
       throw new AppError('You do not have permission to view these messages', 403);
+    }
+
+    if (user.role === 'student') {
+      // If another student owns the issue, block access
+      if (issue.assignedTo && issue.assignedTo.toString() !== user.id) {
+        throw new AppError('You do not have permission to view these messages', 403);
+      }
     }
 
     const messages = await Message.find({ issue: issueId })
       .populate('sender', 'name email role')
+      .populate('receiver', 'name email role')
       .sort({ createdAt: 1 });
 
     return messages;

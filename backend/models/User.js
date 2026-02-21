@@ -26,12 +26,15 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['local', 'student', 'admin'],
-      default: 'local',
+      enum: ['client', 'student', 'admin'],
+      default: 'client',
     },
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    idDocumentUrl: {
+      type: String,
     },
     verificationDocument: {
       type: String, // URL to uploaded document
@@ -72,6 +75,7 @@ userSchema.methods.toPublicJSON = function () {
     email: this.email,
     role: this.role,
     isVerified: this.isVerified,
+    idDocumentUrl: this.idDocumentUrl,
     createdAt: this.createdAt,
   };
 };

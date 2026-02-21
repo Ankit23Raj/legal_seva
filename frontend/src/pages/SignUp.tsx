@@ -31,7 +31,7 @@ const formSchema = z.object({
       message: "Password must include at least one letter and one number",
     }),
   confirmPassword: z.string(),
-  role: z.enum(['local', 'student'], { required_error: "Please select a role" }),
+  role: z.enum(['client', 'student'], { required_error: "Please select a role" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -52,7 +52,7 @@ export default function SignUp() {
       email: "",
       password: "",
       confirmPassword: "",
-      role: "local",
+      role: "client",
     },
   });
 
@@ -188,8 +188,8 @@ export default function SignUp() {
                           className="flex flex-col gap-2"
                         >
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="local" id="local" />
-                            <FormLabel htmlFor="local" className="font-normal cursor-pointer">
+                            <RadioGroupItem value="client" id="client" />
+                            <FormLabel htmlFor="client" className="font-normal cursor-pointer">
                               {translate("Person seeking legal advice")}
                             </FormLabel>
                           </div>

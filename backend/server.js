@@ -72,6 +72,13 @@ app.use('/api/quiz-results', quizResultsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/students', studentsRoutes);
 
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Legal Seva API is running',
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({

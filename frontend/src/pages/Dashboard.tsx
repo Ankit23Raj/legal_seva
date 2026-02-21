@@ -4,7 +4,16 @@ import ClientDashboard from './ClientDashboard';
 import StudentDashboard from './StudentDashboard';
 
 export default function Dashboard() {
-  const user = JSON.parse(localStorage.getItem("user") as string);
+  let user: any = null;
+  try {
+    const raw = localStorage.getItem("user");
+    user = raw ? JSON.parse(raw) : null;
+  } catch {
+    // If storage is corrupted, clear it to avoid a redirect loop.
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    user = null;
+  }
 
   if (!user) {
     window.location.href = "/sign-in";

@@ -28,6 +28,20 @@ class MessageController {
     });
   });
 
+  // @route   GET /api/messages?issueId=:issueId
+  // @desc    Get messages for an issue (query param)
+  // @access  Private
+  getMessagesByIssueQuery = asyncHandler(async (req, res) => {
+    const issueId = req.query.issueId;
+    const messages = await messageService.getMessagesByIssue(issueId, req.user);
+
+    res.status(200).json({
+      success: true,
+      count: messages.length,
+      data: { messages },
+    });
+  });
+
   // @route   PATCH /api/messages/:id/read
   // @desc    Mark message as read
   // @access  Private

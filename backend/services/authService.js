@@ -4,12 +4,12 @@ import config from '../config/env.js';
 import { AppError } from '../middlewares/errorHandler.js';
 
 const normalizeRole = (role) => {
-  if (!role) return 'local';
+  if (!role) return 'client';
   const key = String(role).toLowerCase().replace(/[-_\s]+/g, '');
-  if (key === 'client') return 'local';
+  if (key === 'client' || key === 'local') return 'client';
   if (key === 'lawstudent') return 'student';
-  if (['local', 'student', 'admin'].includes(key)) return key;
-  return 'local';
+  if (['client', 'student', 'admin'].includes(key)) return key;
+  return 'client';
 };
 
 class AuthService {

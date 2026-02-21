@@ -19,14 +19,14 @@ class StudentController {
       success: true,
       data: {
         verified: Boolean(user.isVerified),
-        status: user.verificationStatus,
-        documentUrl: user.verificationDocument,
+        status: user.verificationStatus || (user.isVerified ? 'approved' : 'pending'),
+        documentUrl: user.idDocumentUrl || user.verificationDocument,
       },
     });
   });
 
   // @route   POST /api/students/verify-id
-  // @desc    Submit verification document URL for current user
+  // @desc    Submit verification document URL for current user (legacy, URL-based)
   // @access  Private
   submitVerification = asyncHandler(async (req, res) => {
     const { documentUrl } = req.body;
@@ -40,15 +40,16 @@ class StudentController {
       });
     }
 
-    // Store document + mark verified for local dev (no admin review flow implemented).
+    // Store document + mark as pending for admin review
+    user.idDocumentUrl = documentUrl;
     user.verificationDocument = documentUrl;
-    user.verificationStatus = 'approved';
-    user.isVerified = true;
+    user.verificationStatus = 'pending';
+    user.isVerified = false;
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: 'Verification submitted',
+      message: 'Submitted for verification',
       data: {
         verified: Boolean(user.isVerified),
         status: user.verificationStatus,

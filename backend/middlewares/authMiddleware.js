@@ -3,6 +3,15 @@ import config from '../config/env.js';
 import { AppError } from './errorHandler.js';
 import { asyncHandler } from './errorHandler.js';
 
+const normalizeRole = (role) => {
+  if (!role) return 'client';
+  const key = String(role).toLowerCase().replace(/[-_\s]+/g, '');
+  if (key === 'local' || key === 'client') return 'client';
+  if (key === 'lawstudent') return 'student';
+  if (['student', 'admin'].includes(key)) return key;
+  return 'client';
+};
+
 export const verifyToken = asyncHandler(async (req, res, next) => {
   // Get token from header
   const authHeader = req.headers.authorization;
@@ -22,7 +31,11 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(token, config.JWT_SECRET);
     
     // Attach user to request
-    req.user = decoded;
+    req.user = {
+      ...decoded,
+      id: decoded?.id ? String(decoded.id) : decoded?.id,
+      role: normalizeRole(decoded?.role),
+    };
     
     next();
   } catch (error) {

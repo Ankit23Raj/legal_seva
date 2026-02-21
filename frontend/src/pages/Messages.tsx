@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { Phone, Send, Calendar, Star, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +56,7 @@ interface Message {
 export default function Messages() {
   const { translate } = useLanguage();
   const { user } = useAuth();
+  const { issueId } = useParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
@@ -65,11 +67,20 @@ export default function Messages() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const isStudent = user?.role === 'student';
+  const currentUserId = (user as any)?.id || (user as any)?._id || '';
+
+  // If navigated from ReplyClient (e.g. /messages/:issueId), open that chat.
+  useEffect(() => {
+    if (issueId) {
+      setActiveChat(issueId);
+    }
+  }, [issueId]);
 
   // Fetch conversations on mount
   useEffect(() => {
     fetchConversations();
   }, []);
+
 
   // Fetch messages when active chat changes
   useEffect(() => {
@@ -99,11 +110,22 @@ export default function Messages() {
   const fetchMessages = async (conversationId: string) => {
     try {
       setIsLoading(true);
-      const data = await apiFetch(`/messages/${conversationId}`);
-      const messagesList = (data?.messages || []).map((m: any) => ({
+      console.log('[Messages] fetchMessages conversationId:', conversationId);
+      const payload: any = await apiFetch(`/messages/${conversationId}`);
+      console.log('[Messages] fetchMessages payload:', payload);
+
+      const rawMessages = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.messages)
+          ? payload.messages
+          : Array.isArray(payload?.data?.messages)
+            ? payload.data.messages
+            : [];
+
+      const messagesList = rawMessages.map((m: any) => ({
         id: m._id || m.id,
         conversationId,
-        senderId: m.sender?._id || m.sender?.id || m.sender,
+        senderId: String(m.sender?._id || m.sender?.id || m.sender || ''),
         receiverId: '',
         message: m.message,
         timestamp: m.createdAt || m.timestamp,
@@ -385,7 +407,7 @@ export default function Messages() {
                 </div>
               ) : (
                 messages.map((message) => {
-                  const isOwnMessage = message.senderId === user?.id;
+                  const isOwnMessage = message.senderId === String(currentUserId);
                   return (
                     <div
                       key={message.id}
@@ -416,7 +438,10 @@ export default function Messages() {
                   placeholder={translate("Type your message...")}
                   className="min-h-10 flex-1 resize-none"
                 />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim()}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

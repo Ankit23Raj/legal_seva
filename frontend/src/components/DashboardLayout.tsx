@@ -53,13 +53,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       href: '/dashboard',
       label: translate('Dashboard'),
       icon: <User className="h-5 w-5" />,
-      roles: ['local', 'student', 'admin'],
+      roles: ['local', 'client', 'student', 'admin'],
     },
     {
       href: '/share-issue',
       label: translate('Share Issue'),
       icon: <Share2 className="h-5 w-5" />,
-      roles: ['local'],
+      roles: ['local', 'client'],
     },
     {
       href: '/reply-client',
@@ -71,25 +71,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       href: '/quizzes',
       label: translate('Quizzes'),
       icon: <BrainCircuit className="h-5 w-5" />,
-      roles: ['local', 'student', 'admin'],
+      roles: ['local', 'client', 'student', 'admin'],
     },
     {
       href: '/legal-modules',
       label: translate('Legal Modules'),
       icon: <BookOpen className="h-5 w-5" />,
-      roles: ['local', 'student', 'admin'],
+      roles: ['local', 'client', 'student', 'admin'],
     },
     {
       href: '/messages',
       label: translate('Messages'),
       icon: <MessageSquare className="h-5 w-5" />,
-      roles: ['local', 'student', 'admin'],
+      roles: ['local', 'client', 'student', 'admin'],
     },
     {
       href: '/help',
       label: translate('Help'),
       icon: <HelpCircle className="h-5 w-5" />,
-      roles: ['local', 'student', 'admin'],
+      roles: ['local', 'client', 'student', 'admin'],
     },
   ];
 

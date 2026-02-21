@@ -1,9 +1,15 @@
 import Issue from '../models/Issue.js';
 import { AppError } from '../middlewares/errorHandler.js';
 
+const isClientRole = (role) => role === 'client' || role === 'local';
+
 class IssueService {
   // Create new issue
   async createIssue(issueData, user) {
+    if (!isClientRole(user.role)) {
+      throw new AppError('Only clients can post issues', 403);
+    }
+
     const issue = await Issue.create({
       ...issueData,
       client: user.id,
@@ -19,7 +25,7 @@ class IssueService {
     const query = {};
 
     // If user is a client, only show their issues
-    if (user.role === 'local') {
+    if (isClientRole(user.role)) {
       query.client = user.id;
     }
 
@@ -52,7 +58,7 @@ class IssueService {
     }
 
     // Check if user has access to this issue
-    if (user.role === 'local' && issue.client._id.toString() !== user.id) {
+    if (isClientRole(user.role) && issue.client._id.toString() !== user.id) {
       throw new AppError('You do not have permission to access this issue', 403);
     }
 
@@ -68,7 +74,7 @@ class IssueService {
     }
 
     // Check permissions
-    if (user.role === 'local' && issue.client.toString() !== user.id) {
+    if (isClientRole(user.role) && issue.client.toString() !== user.id) {
       throw new AppError('You do not have permission to update this issue', 403);
     }
 

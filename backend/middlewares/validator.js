@@ -106,6 +106,20 @@ export const createMessageValidation = [
   validate
 ];
 
+export const issueIdValidation = [
+  param('issueId')
+    .isMongoId()
+    .withMessage('Invalid issue ID'),
+  validate
+];
+
+export const issueIdQueryValidation = [
+  query('issueId')
+    .isMongoId()
+    .withMessage('Invalid issue ID'),
+  validate,
+];
+
 // Quiz validation rules
 export const submitQuizValidation = [
   body('categoryId')

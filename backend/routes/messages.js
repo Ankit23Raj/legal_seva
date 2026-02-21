@@ -1,7 +1,7 @@
 import express from 'express';
 import messageController from '../controllers/messageController.js';
 import { verifyToken } from '../middlewares/authMiddleware.js';
-import { createMessageValidation, mongoIdValidation } from '../middlewares/validator.js';
+import { createMessageValidation, issueIdQueryValidation, issueIdValidation, mongoIdValidation } from '../middlewares/validator.js';
 
 const router = express.Router();
 
@@ -10,9 +10,10 @@ router.use(verifyToken);
 
 // Message routes
 router.post('/', createMessageValidation, messageController.createMessage);
+router.get('/', issueIdQueryValidation, messageController.getMessagesByIssueQuery);
 router.get('/conversations', messageController.getConversations);
 router.get('/unread/count', messageController.getUnreadCount);
-router.get('/:issueId', mongoIdValidation, messageController.getMessagesByIssue);
+router.get('/:issueId', issueIdValidation, messageController.getMessagesByIssue);
 router.patch('/:id/read', mongoIdValidation, messageController.markAsRead);
 
 export default router;

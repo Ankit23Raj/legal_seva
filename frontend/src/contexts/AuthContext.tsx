@@ -10,12 +10,30 @@ import { apiFetch } from "@/lib/api";
    TYPES
 ========================= */
 
-export type UserRole = "local" | "student" | "admin";
+export type UserRole = "client" | "student" | "admin";
 
 export type User = {
+  id: string;
   email: string;
   name: string;
   role?: UserRole;
+  isVerified?: boolean;
+  idDocumentUrl?: string;
+};
+
+const normalizeUser = (raw: any): User | null => {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const id = raw.id || raw._id;
+  if (!id) return null;
+
+  const role = raw.role === 'local' ? 'client' : raw.role;
+
+  return {
+    ...raw,
+    id: String(id),
+    role,
+  } as User;
 };
 
 type AuthContextType = {
@@ -66,7 +84,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (storedUser && token) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        const normalized = normalizeUser(parsed);
+        if (normalized) {
+          setUser(normalized);
+          localStorage.setItem('user', JSON.stringify(normalized));
+        } else {
+          throw new Error('Invalid stored user');
+        }
       } catch (error) {
         console.error("Invalid stored user, clearing auth", error);
         localStorage.removeItem("user");
@@ -89,8 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         body: JSON.stringify({ email, password }),
       });
 
-      setUser(data.user);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      const normalized = normalizeUser(data.user);
+      setUser(normalized);
+      localStorage.setItem("user", JSON.stringify(normalized));
       localStorage.setItem("token", data.token);
     } finally {
       setLoading(false);
@@ -114,8 +140,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     // auto-login after register
-    setUser(data.user);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    const normalized = normalizeUser(data.user);
+    setUser(normalized);
+    localStorage.setItem("user", JSON.stringify(normalized));
     localStorage.setItem("token", data.token);
   } finally {
     setLoading(false);

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, MessageSquare, Upload, Eye, Search, Phone, AlertTriangle } from 'lucide-react';
+import { MessageSquare, Upload, Eye, Search, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -66,17 +66,13 @@ export default function ReplyClient() {
   const { translate } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [uploadedId, setUploadedId] = useState<File | null>(null);
-  const [isVerified, setIsVerified] = useState(Boolean((user as any)?.isVerified));
   const [searchTerm, setSearchTerm] = useState("");
   const [issues, setIssues] = useState<any[]>([]);
   const [filteredIssues, setFilteredIssues] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
   
   useEffect(() => {
     fetchIssues();
-    fetchVerificationStatus();
   }, []);
   
   const fetchIssues = async () => {
@@ -100,68 +96,7 @@ export default function ReplyClient() {
     }
   };
   
-  const fetchVerificationStatus = async () => {
-    try {
-      const data = await apiFetch("/students/verification-status");
-      setIsVerified(Boolean(data?.verified));
-    } catch (error) {
-      console.error("Failed to fetch verification status");
-    }
-  };
   
-  const handleIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedId(e.target.files[0]);
-    }
-  };
-  
-  const handleVerifyId = async () => {
-    if (!uploadedId) {
-      toast({
-        variant: "destructive",
-        title: translate("No file selected"),
-        description: translate("Please upload your student ID document first."),
-      });
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      
-      // First, upload the file
-      const formData = new FormData();
-      formData.append('document', uploadedId);
-
-      const uploadData = await apiFetch('/upload/student-id', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      // Then, submit verification request
-      await apiFetch("/students/verify-id", {
-        method: "POST",
-        body: JSON.stringify({
-          idType: "student-id",
-          idNumber: uploadedId.name,
-          documentUrl: uploadData?.file?.url
-        }),
-      });
-      
-      setIsVerified(true);
-      toast({
-        title: translate("ID Verified"),
-        description: translate("Your ID has been verified successfully. You can now respond to legal issues."),
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: translate("Verification Failed"),
-        description: error instanceof Error ? error.message : translate("Failed to verify ID"),
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
   
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase();
@@ -181,15 +116,6 @@ export default function ReplyClient() {
   };
   
   const handleReplyClick = (issueId: string) => {
-    if (!isVerified) {
-      toast({
-        variant: "destructive",
-        title: translate("ID Verification Required"),
-        description: translate("You need to upload and verify your ID to respond to legal issues."),
-      });
-      return;
-    }
-    
     // Navigate to chat page (in a real app)
     navigate(`/messages/${issueId}`);
   };
@@ -229,63 +155,6 @@ export default function ReplyClient() {
             {translate("Provide legal guidance to people seeking advice.")}
           </p>
         </div>
-        
-        {!isVerified && (
-          <Card className="border-warning bg-warning/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-warning" />
-                {translate("ID Verification Required")}
-              </CardTitle>
-              <CardDescription>
-                {translate("You need to verify your identity before you can respond to legal issues.")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-4">
-                <div className="border-2 border-dashed rounded-md p-6 text-center">
-                  <Input
-                    type="file"
-                    className="hidden"
-                    id="id-upload"
-                    onChange={handleIdUpload}
-                    accept="image/*,.pdf"
-                  />
-                  <label
-                    htmlFor="id-upload"
-                    className="flex flex-col items-center gap-2 cursor-pointer"
-                  >
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium">
-                      {translate("Upload College ID Card")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {translate("PDF, JPG, PNG up to 5MB")}
-                    </p>
-                  </label>
-                </div>
-                
-                {uploadedId && (
-                  <div className="text-sm flex items-center gap-2">
-                    <Check className="h-4 w-4 text-success" />
-                    <span>
-                      {translate("File uploaded:")} {uploadedId.name}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                disabled={!uploadedId || isUploading}
-                onClick={handleVerifyId}
-              >
-                {isUploading ? translate("Uploading...") : translate("Verify ID")}
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
         
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

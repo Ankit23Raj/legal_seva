@@ -104,6 +104,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/messages/:issueId"
+                element={
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
