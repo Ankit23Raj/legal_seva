@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import RoleSelection from "./pages/RoleSelection";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Help from "./pages/Help";
 import Dashboard from "./pages/Dashboard";
 import QuizzesList from "./pages/QuizzesList";
 import QuizPage from "./pages/QuizPage";
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/role-selection" element={<RoleSelection />} />
               <Route path="/sign-in" element={<SignIn />} />
               <Route path="/sign-up" element={<SignUp />} />
+              <Route path="/help" element={<Help />} />
               <Route
                 path="/chatbot"
                 element={

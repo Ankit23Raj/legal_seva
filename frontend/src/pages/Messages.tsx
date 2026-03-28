@@ -815,384 +815,419 @@ export default function Messages() {
   
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-end pb-2">
-        <div
-          className={cn(
-            'inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs',
-            socketStatus === 'connected'
-              ? 'border-success/30 bg-success/10 text-success'
-              : socketStatus === 'reconnecting'
-                ? 'border-warning/30 bg-warning/10 text-warning'
-                : 'border-destructive/30 bg-destructive/10 text-destructive'
-          )}
-          aria-live="polite"
-        >
-          <span
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-8 px-4 md:px-6">
+        {/* Header */}
+        <div className="max-w-7xl mx-auto mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Welcome, {user?.name || 'User'}!</h1>
+          <p className="text-base text-gray-500 mt-2">Explore legal resources and get help from law students.</p>
+        </div>
+
+        {/* Socket Status Indicator */}
+        <div className="max-w-7xl mx-auto mb-6 flex justify-end">
+          <div
             className={cn(
-              'h-2 w-2 rounded-full',
+              'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm',
               socketStatus === 'connected'
-                ? 'bg-success'
+                ? 'border-green-200 bg-green-50 text-green-700'
                 : socketStatus === 'reconnecting'
-                  ? 'bg-warning'
-                  : 'bg-destructive'
+                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                  : 'border-red-200 bg-red-50 text-red-700'
             )}
-          />
-          <span className="font-medium">
-            {socketStatus === 'connected'
-              ? translate('Connected')
-              : socketStatus === 'reconnecting'
-                ? translate('Reconnecting...')
-                : translate('Disconnected (fallback mode)')}
-          </span>
-        </div>
-      </div>
-      <div className="flex h-[calc(100vh-10rem)] overflow-hidden rounded-md border">
-        {/* Chat List */}
-        <div className="w-80 border-r overflow-auto bg-card">
-          <div className="p-4">
-            <h2 className="font-semibold mb-4">{translate("Conversations")}</h2>
-            <div className="space-y-2">
-              {conversations.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {translate("No conversations yet")}
-                </p>
-              ) : (
-                conversations.map((conversation) => {
-                  const convOtherId = conversation.otherUser?.id ? String(conversation.otherUser.id) : '';
-                  const otherUserName = !convOtherId
-                    ? (!isStudent ? translate('Waiting for student...') : 'Unknown User')
-                    : convOtherId === currentUserId
-                      ? 'Unknown User'
-                      : (conversation.otherUser?.fullName || 'Unknown User');
-                  const avatar = otherUserName.charAt(0).toUpperCase();
-                  
-                  return (
-                    <button
-                      key={conversation.id}
-                      className={cn(
-                        "flex items-start gap-3 w-full p-3 text-left rounded-md transition-colors",
-                        activeChat === conversation.id
-                          ? "bg-primary/10"
-                          : "hover:bg-secondary"
-                      )}
-                      onClick={() => setActiveChat(conversation.id)}
-                    >
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground bg-primary">
-                        {avatar}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium truncate">
-                            {otherUserName}
-                          </p>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(conversation.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {conversation.lastMessage}
-                        </p>
-                      </div>
-                      {conversation.unread && (
-                        <span className="h-2 w-2 bg-primary rounded-full flex-shrink-0" />
-                      )}
-                    </button>
-                  );
-                })
+            aria-live="polite"
+          >
+            <span
+              className={cn(
+                'h-2 w-2 rounded-full',
+                socketStatus === 'connected'
+                  ? 'bg-green-500'
+                  : socketStatus === 'reconnecting'
+                    ? 'bg-amber-500'
+                    : 'bg-red-500'
               )}
-            </div>
+            />
+            <span className="font-medium text-xs">
+              {socketStatus === 'connected'
+                ? translate('Connected')
+                : socketStatus === 'reconnecting'
+                  ? translate('Reconnecting...')
+                  : translate('Disconnected (fallback mode)')}
+            </span>
           </div>
         </div>
 
-        {/* Chat Window */}
-        {activeChat ? (
-          <div className="flex-1 flex flex-col overflow-hidden bg-background">
-            {/* Chat Header */}
-            <div className="p-4 border-b flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground bg-primary">
-                  {(isWaitingForStudent ? '?' : resolvedOtherUserName).charAt(0).toUpperCase() || '?'}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">
-                      {resolvedOtherUserName}
-                    </p>
-                    {!isWaitingForStudent && otherUserId && (
-                      <span
-                        className={cn(
-                          'h-2 w-2 rounded-full',
-                          otherPresence?.online ? 'bg-success' : 'bg-muted'
-                        )}
-                        aria-label={otherPresence?.online ? translate('Online') : translate('Offline')}
-                        title={otherPresence?.online ? translate('Online') : translate('Offline')}
-                      />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {(() => {
-                      if (isWaitingForStudent) return translate('Waiting for student...');
-                      if (!otherUserId) return activeConversation?.otherUser?.role || '';
-                      if (otherPresence?.online) return translate('Online');
-                      const ls = formatLastSeen(otherPresence?.lastSeen);
-                      return ls ? `${translate('Last seen')} ${ls}` : translate('Offline');
-                    })()}
-                  </p>
-                </div>
+        {/* Main Chat Container */}
+        <div className="max-w-7xl mx-auto">
+          <div className="flex h-[calc(100vh-20rem)] overflow-hidden rounded-2xl border-0 shadow-xl bg-white">
+            {/* Left: Conversations List */}
+            <div className="w-80 border-r border-gray-200 overflow-auto bg-gradient-to-b from-blue-50/50 to-white">
+              <div className="p-6 sticky top-0 bg-gradient-to-b from-blue-50/50 to-white z-10">
+                <h2 className="font-semibold text-base text-gray-900">{translate("Conversations")}</h2>
               </div>
-              <div className="flex gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {translate("Schedule Call")}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{translate("Schedule a Call")}</DialogTitle>
-                      <DialogDescription>
-                        {translate("Pick a date and time for your call.")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4 flex flex-col items-center space-y-4">
-                      <CalendarComponent
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        className="rounded-md border shadow"
-                        disabled={(date) => date < new Date()}
-                      />
-                      
-                      <div className="w-full">
-                        <label className="text-sm font-medium">
-                          {translate("Selected Date")}
-                        </label>
-                        <Input
-                          value={date ? format(date, "PPP") : ""}
-                          readOnly
-                          className="mt-1"
-                        />
-                      </div>
-                      
-                      <div className="w-full">
-                        <label className="text-sm font-medium">
-                          {translate("Preferred Time")}
-                        </label>
-                        <select className="w-full mt-1 p-2 border rounded-md">
-                          <option value="9:00">9:00 AM</option>
-                          <option value="10:00">10:00 AM</option>
-                          <option value="11:00">11:00 AM</option>
-                          <option value="12:00">12:00 PM</option>
-                          <option value="13:00">1:00 PM</option>
-                          <option value="14:00">2:00 PM</option>
-                          <option value="15:00">3:00 PM</option>
-                          <option value="16:00">4:00 PM</option>
-                          <option value="17:00">5:00 PM</option>
-                        </select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleScheduleCall}>
-                        {translate("Schedule Call")}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-                
-                {!isStudent && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <Star className="h-4 w-4 text-warning" />
-                        {translate("Rate Advisor")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <div className="space-y-4">
-                        <h3 className="font-medium">
-                          {translate("Rate your experience")}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {translate("How would you rate the legal advice provided?")}
-                        </p>
-                        <div className="flex justify-center py-2">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              className="p-1"
-                              onClick={() => setRatingValue(star)}
-                            >
-                              <Star
-                                className={cn(
-                                  "h-6 w-6",
-                                  star <= (ratingValue || 0)
-                                    ? "text-warning fill-warning"
-                                    : "text-muted-foreground"
-                                )}
-                              />
-                            </button>
-                          ))}
-                        </div>
-                        <Textarea
-                          placeholder={translate("Additional feedback (optional)")}
-                          className="resize-none"
-                        />
-                        <Button className="w-full" onClick={handleSubmitRating}>
-                          {translate("Submit Rating")}
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-                
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Phone className="h-4 w-4" />
-                  {translate("Call")}
-                </Button>
-              </div>
-            </div>
-            
-            {/* Chat Messages */}
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-2">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">{translate("Loading messages...")}</p>
-                </div>
-              ) : isWaitingForStudent ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">
-                    {translate("Waiting for a student to respond")}
+              <div className="px-4 pb-4 space-y-2">
+                {conversations.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    {translate("No conversations yet")}
                   </p>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">{translate("No messages yet. Start the conversation!")}</p>
-                </div>
-              ) : (
-                messages.map((message) => {
-                  const senderId = String(
-                    (message as any)?.sender?._id ??
-                    (message as any)?.sender?.id ??
-                    (message as any)?.senderId ??
-                    (message as any)?.user?._id ??
-                    (message as any)?.user?.id ??
-                    (message as any)?.userId ??
-                    ''
-                  );
-
-                  // If either id is missing, treat as NOT own to avoid "everything on the right".
-                  const isOwnMessage = !!currentUserId && !!senderId && senderId === String(currentUserId);
-
-                  if (import.meta.env.DEV) {
-                    const key = String((message as any)?.id || (message as any)?._id || '');
-                    if (key && !debugLoggedMessageIdsRef.current[key]) {
-                      debugLoggedMessageIdsRef.current[key] = true;
-                      // Temporary debug: verify sender detection.
-                      console.log('[Messages] message/currentUserId', message, currentUserId);
-                    }
-                  }
-                  const shouldAnimateIncoming = !!animatedIncomingIds[message.id] && !isOwnMessage;
-                  return (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        'flex w-full',
-                        isOwnMessage ? 'justify-end' : 'justify-start'
-                      )}
-                    >
-                      <div
+                ) : (
+                  conversations.map((conversation) => {
+                    const convOtherId = conversation.otherUser?.id ? String(conversation.otherUser.id) : '';
+                    const otherUserName = !convOtherId
+                      ? (!isStudent ? translate('Waiting for student...') : 'Unknown User')
+                      : convOtherId === currentUserId
+                        ? 'Unknown User'
+                        : (conversation.otherUser?.fullName || 'Unknown User');
+                    const avatar = otherUserName.charAt(0).toUpperCase();
+                    
+                    return (
+                      <button
+                        key={conversation.id}
                         className={cn(
-                          'relative flex w-fit max-w-[60%] flex-col gap-1 break-words whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed',
-                          shouldAnimateIncoming && 'animate-in fade-in-0 slide-in-from-bottom-2 duration-200',
-                          isOwnMessage
-                            ? 'ml-auto bg-success/15 text-foreground rounded-br-sm'
-                            : 'mr-auto bg-background text-foreground border border-border rounded-bl-sm'
+                          "flex items-start gap-3 w-full p-3 text-left rounded-xl transition-all duration-200",
+                          activeChat === conversation.id
+                            ? "bg-blue-100 border-l-4 border-blue-600"
+                            : "hover:bg-gray-100 border-l-4 border-transparent"
                         )}
+                        onClick={() => setActiveChat(conversation.id)}
                       >
-                        <p className="whitespace-pre-wrap break-words">{message.message}</p>
-                        <div className="flex justify-end">
-                          <span className="text-[11px] leading-none opacity-60">
-                            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-                          </span>
+                        <div className={cn(
+                          "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center font-semibold text-white transition-all",
+                          activeChat === conversation.id
+                            ? "bg-blue-600"
+                            : "bg-gradient-to-br from-blue-400 to-blue-600"
+                        )}>
+                          {avatar}
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={cn(
+                              "font-medium text-sm truncate transition-colors",
+                              activeChat === conversation.id ? "text-gray-900" : "text-gray-800"
+                            )}>
+                              {otherUserName}
+                            </p>
+                            <span className="text-xs text-gray-500 flex-shrink-0">
+                              {new Date(conversation.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 truncate">
+                            {conversation.lastMessage}
+                          </p>
+                        </div>
+                        {conversation.unread && (
+                          <span className="h-3 w-3 bg-blue-600 rounded-full flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
 
-                        {/* Tail */}
-                        <div
-                          className={cn(
-                            'pointer-events-none absolute h-0 w-0 border-y-[8px] border-y-transparent top-3',
-                            isOwnMessage
-                              ? 'right-[-8px] border-l-[8px] border-l-[hsl(var(--success))]'
-                              : 'left-[-8px] border-r-[8px] border-r-[hsl(var(--background))]'
-                          )}
-                          aria-hidden="true"
-                        />
+            {/* Right: Chat Window */}
+            {activeChat ? (
+              <div className="flex-1 flex flex-col overflow-hidden bg-white">
+                {/* Chat Header */}
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-white to-blue-50/30">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0">
+                      <div className="h-12 w-12 rounded-full flex items-center justify-center font-semibold text-white bg-gradient-to-br from-blue-500 to-blue-600">
+                        {(isWaitingForStudent ? '?' : resolvedOtherUserName).charAt(0).toUpperCase() || '?'}
                       </div>
                     </div>
-                  );
-                })
-              )}
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <p className="font-semibold text-gray-900 text-base">
+                          {resolvedOtherUserName}
+                        </p>
+                        {!isWaitingForStudent && otherUserId && (
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={cn(
+                                'h-2.5 w-2.5 rounded-full',
+                                otherPresence?.online ? 'bg-green-500' : 'bg-gray-400'
+                              )}
+                              aria-label={otherPresence?.online ? translate('Online') : translate('Offline')}
+                              title={otherPresence?.online ? translate('Online') : translate('Offline')}
+                            />
+                            <span className={cn(
+                              'text-xs font-medium',
+                              otherPresence?.online ? 'text-green-600' : 'text-gray-500'
+                            )}>
+                              {otherPresence?.online ? translate('Online') : translate('Offline')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {(() => {
+                          if (isWaitingForStudent) return translate('Waiting for student...');
+                          if (!otherUserId) return activeConversation?.otherUser?.role || '';
+                          if (otherPresence?.online) return translate('Online now');
+                          const ls = formatLastSeen(otherPresence?.lastSeen);
+                          return ls ? `${translate('Last seen')} ${ls}` : translate('Offline');
+                        })()}
+                      </p>
+                    </div>
+                  </div>
 
-              {newMessagesCount > 0 && !isNearBottom && !isWaitingForStudent && (
-                <div className="sticky bottom-3 z-10 flex justify-center">
-                  <button
-                    type="button"
-                    className="rounded-full border bg-background px-3 py-1 text-xs font-medium shadow-sm"
-                    onClick={() => {
-                      setNewMessagesCount(0);
-                      scrollToBottom('smooth');
-                    }}
-                    aria-live="polite"
-                  >
-                    {newMessagesCount === 1
-                      ? translate('New message')
-                      : `${newMessagesCount} ${translate('New messages')}`}
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1.5 border-blue-200 text-blue-600 hover:bg-blue-50 text-xs">
+                          <Calendar className="h-4 w-4" />
+                          <span className="hidden sm:inline">{translate("Schedule")}</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{translate("Schedule a Call")}</DialogTitle>
+                          <DialogDescription>
+                            {translate("Pick a date and time for your call.")}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 flex flex-col items-center space-y-4">
+                          <CalendarComponent
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            className="rounded-md border shadow"
+                            disabled={(date) => date < new Date()}
+                          />
+                          
+                          <div className="w-full">
+                            <label className="text-sm font-medium">
+                              {translate("Selected Date")}
+                            </label>
+                            <Input
+                              value={date ? format(date, "PPP") : ""}
+                              readOnly
+                              className="mt-1"
+                            />
+                          </div>
+                          
+                          <div className="w-full">
+                            <label className="text-sm font-medium">
+                              {translate("Preferred Time")}
+                            </label>
+                            <select className="w-full mt-1 p-2 border rounded-md">
+                              <option value="9:00">9:00 AM</option>
+                              <option value="10:00">10:00 AM</option>
+                              <option value="11:00">11:00 AM</option>
+                              <option value="12:00">12:00 PM</option>
+                              <option value="13:00">1:00 PM</option>
+                              <option value="14:00">2:00 PM</option>
+                              <option value="15:00">3:00 PM</option>
+                              <option value="16:00">4:00 PM</option>
+                              <option value="17:00">5:00 PM</option>
+                            </select>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button onClick={handleScheduleCall} className="bg-blue-600 hover:bg-blue-700">
+                            {translate("Schedule Call")}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    {!isStudent && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 border-amber-200 text-amber-600 hover:bg-amber-50 text-xs">
+                            <Star className="h-4 w-4" />
+                            <span className="hidden sm:inline">{translate("Rate")}</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <div className="space-y-4">
+                            <h3 className="font-semibold text-gray-900">
+                              {translate("Rate your experience")}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {translate("How would you rate the legal advice provided?")}
+                            </p>
+                            <div className="flex justify-center gap-2 py-2">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  className="p-1 transition-transform hover:scale-110"
+                                  onClick={() => setRatingValue(star)}
+                                >
+                                  <Star
+                                    className={cn(
+                                      "h-6 w-6",
+                                      star <= (ratingValue || 0)
+                                        ? "text-amber-400 fill-amber-400"
+                                        : "text-gray-300"
+                                    )}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            <Textarea
+                              placeholder={translate("Additional feedback (optional)")}
+                              className="resize-none"
+                            />
+                            <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={handleSubmitRating}>
+                              {translate("Submit Rating")}
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                    
+                    <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-xs">
+                      <Phone className="h-4 w-4" />
+                      <span className="hidden sm:inline">{translate("Call")}</span>
+                    </Button>
+                  </div>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-            
-            {/* Message Input */}
-            <div className="p-4 border-t">
-              {Object.keys(typingUsers).length > 0 && !isWaitingForStudent && (
-                <p className="text-xs text-muted-foreground mb-2">
-                  {(() => {
-                    const names = Array.from(new Set(Object.values(typingUsers))).filter(Boolean);
-                    if (names.length === 1) return `${names[0]} is typing...`;
-                    if (names.length === 2) return `${names[0]} and ${names[1]} are typing...`;
-                    return `${names[0]} and ${names.length - 1} others are typing...`;
-                  })()}
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Textarea
-                  value={newMessage}
-                  onChange={(e) => handleDraftChange(e.target.value)}
-                  placeholder={translate("Type your message...")}
-                  className="min-h-10 flex-1 resize-none"
-                  disabled={isWaitingForStudent}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim() || isWaitingForStudent}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+                
+                {/* Chat Messages */}
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-white to-blue-50/30">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-gray-500 text-center">{translate("Loading messages...")}</p>
+                    </div>
+                  ) : isWaitingForStudent ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <p className="text-gray-700 font-medium text-base">
+                          {translate("Waiting for a student to respond")}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          {translate("They will be notified about your case")}
+                        </p>
+                      </div>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <p className="text-gray-700 font-medium text-base">{translate("No messages yet")}</p>
+                        <p className="text-xs text-gray-500 mt-2">{translate("Start the conversation!")}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    messages.map((message) => {
+                      const senderId = String(
+                        (message as any)?.sender?._id ??
+                        (message as any)?.sender?.id ??
+                        (message as any)?.senderId ??
+                        (message as any)?.user?._id ??
+                        (message as any)?.user?.id ??
+                        (message as any)?.userId ??
+                        ''
+                      );
+
+                      const isOwnMessage = !!currentUserId && !!senderId && senderId === String(currentUserId);
+
+                      if (import.meta.env.DEV) {
+                        const key = String((message as any)?.id || (message as any)?._id || '');
+                        if (key && !debugLoggedMessageIdsRef.current[key]) {
+                          debugLoggedMessageIdsRef.current[key] = true;
+                          console.log('[Messages] message/currentUserId', message, currentUserId);
+                        }
+                      }
+                      const shouldAnimateIncoming = !!animatedIncomingIds[message.id] && !isOwnMessage;
+                      return (
+                        <div
+                          key={message.id}
+                          className={cn(
+                            'flex w-full',
+                            isOwnMessage ? 'justify-end' : 'justify-start'
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl text-xs leading-relaxed break-words',
+                              shouldAnimateIncoming && 'animate-in fade-in-0 slide-in-from-bottom-2 duration-200',
+                              isOwnMessage
+                                ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-none shadow-md'
+                                : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'
+                            )}
+                          >
+                            <p className="break-words whitespace-pre-wrap">{message.message}</p>
+                            <div className="flex justify-end mt-1.5">
+                              <span className={cn(
+                                'text-[10px] ',
+                                isOwnMessage ? 'text-blue-100' : 'text-gray-600'
+                              )}>
+                                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {newMessagesCount > 0 && !isNearBottom && !isWaitingForStudent && (
+                    <div className="sticky bottom-3 z-10 flex justify-center">
+                      <button
+                        type="button"
+                        className="rounded-full border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 shadow-md hover:bg-blue-100 transition-colors"
+                        onClick={() => {
+                          setNewMessagesCount(0);
+                          scrollToBottom('smooth');
+                        }}
+                        aria-live="polite"
+                      >
+                        {newMessagesCount === 1
+                          ? translate('New message')
+                          : `${newMessagesCount} ${translate('New messages')}`}
+                      </button>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+                
+                {/* Message Input */}
+                <div className="p-6 border-t border-gray-200 bg-white">
+                  {Object.keys(typingUsers).length > 0 && !isWaitingForStudent && (
+                    <p className="text-[11px] text-gray-500 mb-3 italic font-medium">
+                      {(() => {
+                        const names = Array.from(new Set(Object.values(typingUsers))).filter(Boolean);
+                        if (names.length === 1) return `${names[0]} is typing...`;
+                        if (names.length === 2) return `${names[0]} and ${names[1]} are typing...`;
+                        return `${names[0]} and ${names.length - 1} others are typing...`;
+                      })()}
+                    </p>
+                  )}
+                  <div className="flex gap-3 items-end">
+                    <Textarea
+                      value={newMessage}
+                      onChange={(e) => handleDraftChange(e.target.value)}
+                      placeholder={translate("Type your message...")}
+                      className="min-h-12 flex-1 resize-none rounded-xl border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isWaitingForStudent}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim() || isWaitingForStudent}
+                      className="bg-blue-600 hover:bg-blue-700 h-12 w-12 p-0 rounded-xl"
+                    >
+                      <Send className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  {isWaitingForStudent && (
+                    <p className="text-[11px] text-gray-500 mt-3 font-medium">
+                      {translate("Waiting for a student to respond")}
+                    </p>
+                  )}
+                </div>
               </div>
-              {isWaitingForStudent && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {translate("Waiting for a student to respond")}
-                </p>
-              )}
-            </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-white to-blue-50/30">
+                <div className="text-center space-y-2">
+                  <p className="text-gray-700 font-medium text-base">{translate("Select a conversation")}</p>
+                  <p className="text-gray-500 text-sm">{translate("Choose a conversation from the left to start chatting")}</p>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            {translate("Select a conversation to start chatting")}
-          </div>
-        )}
+        </div>
       </div>
     </DashboardLayout>
   );

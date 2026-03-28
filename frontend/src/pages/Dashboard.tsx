@@ -22,13 +22,11 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
-        {user.role === "student" ? (
-          <StudentDashboard user={user} />
-        ) : (
-          <ClientDashboard user={user} />
-        )}
-      </div>
+      {user.role === "student" ? (
+        <StudentDashboard user={user} />
+      ) : (
+        <ClientDashboard user={user} />
+      )}
     </DashboardLayout>
   );
 }

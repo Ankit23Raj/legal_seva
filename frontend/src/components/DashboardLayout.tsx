@@ -6,7 +6,6 @@ import {
   BookOpen, 
   User, 
   LogOut, 
-  HelpCircle, 
   Menu, 
   X,
   Share2,
@@ -83,12 +82,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       href: '/messages',
       label: translate('Messages'),
       icon: <MessageSquare className="h-5 w-5" />,
-      roles: ['local', 'client', 'student', 'admin'],
-    },
-    {
-      href: '/help',
-      label: translate('Help'),
-      icon: <HelpCircle className="h-5 w-5" />,
       roles: ['local', 'client', 'student', 'admin'],
     },
   ];
